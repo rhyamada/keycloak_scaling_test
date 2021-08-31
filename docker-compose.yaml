@@ -1,0 +1,67 @@
+version: "2.4"
+
+services:
+  ingress:
+    image: haproxy:2.2
+    volumes:
+      - ./haproxy:/usr/local/etc/haproxy
+    ports:
+      - "80:80"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      ldap:
+        condition: service_healthy
+  keycloak:
+    build: keycloak
+    cpus: "2.0"
+    environment:
+      DB_ADDR: postgres
+      DB_DATABASE: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+      KEYCLOAK_IMPORT: /tmp/realm.json
+    volumes:
+      - ./keycloak/standalone-ha.xml:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml
+      - ./keycloak/realm.json:/tmp/realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ldap:
+        condition: service_started
+  postgres:
+    image: postgres:11.2
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+  ldap:
+    image: fabric8/389ds
+    environment:
+      DIRSRV_HOSTNAME: ldap
+      DIR_SUFFIX: o=example
+      DIRSRV_LOGLEVEL: 0
+    volumes:
+      # - ldap:/var/lib/dirsrv
+      - ./db.ldif:/etc/confd/templates/users_and_groups.tmpl:ro
+    healthcheck:
+      test: ldapsearch -xh localhost -sbase -buid=user999,ou=users,o=example
+      interval: 2s
+      retries: 30
+  test:
+    build: app
+    depends_on:
+      - ingress
+    volumes:
+      - ./app:/app/
+volumes:
+  postgres: {}
+  ldap: {}
+
+# service:jmx:remote+http://ec2-54-232-30-230.sa-east-1.compute.amazonaws.com:9990

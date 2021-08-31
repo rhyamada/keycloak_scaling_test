@@ -48,7 +48,6 @@ services:
       DIR_SUFFIX: o=example
       DIRSRV_LOGLEVEL: 0
     volumes:
-      # - ldap:/var/lib/dirsrv
       - ./db.ldif:/etc/confd/templates/users_and_groups.tmpl:ro
     healthcheck:
       test: ldapsearch -xh localhost -sbase -buid=user999,ou=users,o=example
@@ -62,6 +61,3 @@ services:
       - ./app:/app/
 volumes:
   postgres: {}
-  ldap: {}
-
-# service:jmx:remote+http://ec2-54-232-30-230.sa-east-1.compute.amazonaws.com:9990

@@ -60,6 +60,6 @@ services:
     depends_on:
       - ingress
     volumes:
-      - ./app:/app/
+      - ./app/index.js:/app/index.js
 volumes:
   postgres: {}

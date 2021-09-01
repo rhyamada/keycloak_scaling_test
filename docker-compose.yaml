@@ -14,7 +14,8 @@ services:
         condition: service_healthy
   keycloak:
     build: keycloak
-    cpus: "2.0"
+    cpus: "3.0"
+    mem_limit: "2G"
     environment:
       DB_ADDR: postgres
       DB_DATABASE: postgres
@@ -23,6 +24,7 @@ services:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
       KEYCLOAK_IMPORT: /tmp/realm.json
+      JAVA_OPTS: -Xms128m -Xmx1536m -XX:MetaspaceSize=192M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
     volumes:
       - ./keycloak/standalone-ha.xml:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml
       - ./keycloak/realm.json:/tmp/realm.json:ro

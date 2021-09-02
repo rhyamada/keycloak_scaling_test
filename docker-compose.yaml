@@ -24,7 +24,11 @@ services:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
       KEYCLOAK_IMPORT: /tmp/realm.json
+      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,address=0.0.0.0:8787,server=y,suspend=n
       JAVA_OPTS: -Xms128m -Xmx1536m -XX:MetaspaceSize=192M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+    ports:
+      - 8787-8790:8787
+    scale: 2
     volumes:
       - ./keycloak/standalone-ha.xml:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml
       - ./keycloak/realm.json:/tmp/realm.json:ro
@@ -57,8 +61,10 @@ services:
       retries: 30
   test:
     build: app
-    depends_on:
-      - ingress
+    #depends_on:
+    #  - ingress
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
     volumes:
       - ./app/index.js:/app/index.js
 volumes:

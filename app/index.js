@@ -7,15 +7,15 @@ const grant_type = 'authorization_code';
 const token_endpoint = 'http://ingress/auth/realms/example/protocol/openid-connect/token';
 const auth_endpoint = 'http://ingress/auth/realms/example/protocol/openid-connect/auth?client_id=client_id&response_type=code&scope=openid&redirect_uri=' + redirect_uri;
 
-let count = 0, N = 0, R = 0, T = 0, J = 0;
+let count = 0, N = 0, J = 0;
+let T = [];
 let start = new Date().getTime();
 function time() { return new Date().getTime(); }
 function cb(f, a, b) { setTimeout(f, J * 100 * Math.random(), a, b); }
 function token(code) {
     let begin = time();
     needle.post(token_endpoint, { grant_type, client_id, client_secret, code, redirect_uri }, (err, res) => {
-        T += time() - begin;
-        R++;
+        T.push(time() - begin);
         N--;
         if (err) {
             console.log("ERRO:" + err); return;
@@ -32,8 +32,7 @@ function form(url, Cookie) {
     let data = 'username=' + username + '&password=password';
     let begin = time();
     needle.post(url, data, { headers: { Cookie } }, (err, res) => {
-        T += time() - begin;
-        R++;
+        T.push(time() - begin);
         if (err) {
             N--;
             console.log("ERRO:" + err); return;
@@ -52,8 +51,7 @@ function form(url, Cookie) {
 function auth(url) {
     let begin = time();
     needle.get(url, (err, res) => {
-        T += time() - begin;
-        R++;
+        T.push(time() - begin);
         if (err) {
             N--;
             console.log("ERRO:" + err); return;
@@ -72,19 +70,23 @@ function auth(url) {
 
 function timer() {
     let now = time();
-    if (R > 0) {
+    if (T.length > 0) {
         let rate = Math.round(count * 1000 / (now - start));
-        let tr = Math.round(T / R);
-        T = 0; R = 0; count = 0; start = now;
-        console.log(N, rate, tr);
+        count=0;
+        T.sort();
+        let avg = Math.round(T.reduce((a,b)=>(a+b))/T.length);
+        let p90 = T[Math.floor(T.length*0.9)];
+        T = [];
+        start = now;
+        console.log(rate +' / '+J+' login/s  '+N+' threads  avg:'+avg+' ms  p90:'+p90+' ms');
     }
-    if (J < 200) {
-        J++;
+    if (J < 90) {
+        J+=5;
     }
-    for (let i = 0; i < J/2; i++) {
+    for (let i = 0; i < J; i++) {
         N++;
         cb(auth, auth_endpoint);
     }
 }
 
-setInterval(timer, 500);
+setInterval(timer, 1000);
